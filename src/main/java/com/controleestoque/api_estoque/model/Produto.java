@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -29,6 +31,7 @@ public class Produto {
     // É o lado "muitos" (N), que contém a chave estrangeira (FK).
     @ManyToOne(fetch = FetchType.LAZY) // LAZY: Carrega a categoria apenas quando for solicitada.
     @JoinColumn(name = "categoria_id", nullable = false) // Define a FK na tabela tb_produtos.
+    @JsonIgnore
     private Categoria categoria;
 
     // --- Relacionamento N:M (Many-to-Many) ---

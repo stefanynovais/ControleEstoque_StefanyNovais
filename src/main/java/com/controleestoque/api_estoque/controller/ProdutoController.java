@@ -5,6 +5,10 @@ import java.util.List;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
+import com.controleestoque.api_estoque.model.Fornecedor;
+import java.util.Set;
+import java.util.HashSet;
+
 import com.controleestoque.api_estoque.model.Produto;
 import com.controleestoque.api_estoque.repository.ProdutoRepository;
 
@@ -46,40 +50,49 @@ public class ProdutoController {
     // e seus IDs são passados no corpo da requisição (ProdutoDTO seria o ideal
     // aqui).
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<Produto> createProduto(@RequestBody Produto produto) {
+@ResponseStatus(HttpStatus.CREATED)
+public ResponseEntity<Produto> createProduto(@RequestBody Produto produto) {
 
-        // 1. Gerenciamento do 1:N (Categoria)
-        // A categoria deve ser buscada para garantir que existe e está no contexto de
-        // persistência.
-        if (produto.getCategoria() == null || produto.getCategoria().getId() == null) {
-            return ResponseEntity.badRequest().build(); // Categoria é obrigatória
-        }
-
-        categoriaRepository.findById(produto.getCategoria().getId())
-                .ifPresent(produto::setCategoria); // Associa a categoria gerenciada
-
-        // 2. Gerenciamento do N:M (Fornecedores)
-        // Busca todos os fornecedores pelos IDs fornecidos
-        if (produto.getFornecedores() != null && !produto.getFornecedores().isEmpty()) {
-
-            // Cria um Set para armazenar os fornecedores gerenciados
-            produto.getFornecedores().clear();
-
-            // Aqui, em um projeto real, você buscaria os Fornecedores um por um
-            // ou usando um método customizado do repositório.
-            // Exemplo Simplificado:
-            produto.getFornecedores().forEach(fornecedor -> {
-                fornecedorRepository.findById(fornecedor.getId())
-                        .ifPresent(produto.getFornecedores()::add); // Adiciona o fornecedor gerenciado
-            });
-        }
-
-        // 3. Salva o Produto (e o Estoque, se o CASCADE estiver configurado)
-        Produto savedProduto = produtoRepository.save(produto);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedProduto);
+    // valida categoria
+    if (produto.getCategoria() == null || produto.getCategoria().getId() == null) {
+        return ResponseEntity.badRequest().build();
     }
+
+    // busca categoria gerenciada
+    var categoriaOpt = categoriaRepository.findById(produto.getCategoria().getId());
+    if (categoriaOpt.isEmpty()) {
+        return ResponseEntity.badRequest().build();
+    }
+    produto.setCategoria(categoriaOpt.get());
+
+    // Validar e associar fornecedores (se vierem como lista de objetos com id)
+    if (produto.getFornecedores() != null && !produto.getFornecedores().isEmpty()) {
+
+        // usa explicitamente o tipo completo para evitar confusão de imports
+        java.util.Set<com.controleestoque.api_estoque.model.Fornecedor> fornecedoresValidos = new java.util.HashSet<>();
+
+        for (com.controleestoque.api_estoque.model.Fornecedor f : produto.getFornecedores()) {
+            if (f != null && f.getId() != null) {
+                fornecedorRepository.findById(f.getId())
+                    .ifPresent(fornecedoresValidos::add);
+            }
+        }
+
+        // Se quiser exigir pelo menos 1 fornecedor válido:
+        // if (fornecedoresValidos.isEmpty()) return ResponseEntity.badRequest().build();
+
+        produto.setFornecedores(fornecedoresValidos);
+    }
+
+    // Se o produto já tiver Estoque embutido (um objeto Estoque com produto.id),
+    // é recomendado setar produto no estoque também:
+    if (produto.getEstoque() != null) {
+        produto.getEstoque().setProduto(produto);
+    }
+
+    Produto savedProduto = produtoRepository.save(produto);
+    return ResponseEntity.status(HttpStatus.CREATED).body(savedProduto);
+}
 
     // PUT /api/produtos/{id}
     @PutMapping("/{id}")
