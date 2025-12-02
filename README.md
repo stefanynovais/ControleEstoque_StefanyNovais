@@ -40,6 +40,20 @@ Permite gerenciar produtos, clientes e vendas, incluindo:
 
 ---
 
+## 📹 Demonstração da API (Vídeo)
+
+**Duração máxima:** 3 minutos
+
+**Conteúdo do vídeo:**
+1. 🎬 Apresentação facial do aluno  
+2. 👤 Criação de um novo cliente  
+3. 🍎 Consulta do estoque de um produto antes da venda  
+4. 🛒 Registro de uma nova venda (baixa correta)  
+5. ❌ Tentativa de venda com estoque insuficiente (rollback e mensagem de erro)  
+6. 🔎 Consulta das novas entidades (Cliente e Venda) pelos endpoints
+
+---
+
 ## 🚀 Inicialização do Projeto
 
 ### 1️⃣ Clonar o repositório
